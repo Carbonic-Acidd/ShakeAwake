@@ -1,4 +1,4 @@
-// The only code that talks to the network: the server's /api (backend/src/entry.py), which
+// The only code that talks to the network: the server's /api (api/index.py), which
 // passes commands on to the Pico. The site holds no secrets. The shared password is typed once;
 // this device remembers it and sends it with every call, and the server checks it.
 const PASSWORD_KEY = 'shakeawake-password'   // where this device remembers the password

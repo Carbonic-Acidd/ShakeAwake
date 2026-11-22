@@ -1,13 +1,14 @@
 # Shake Awake
 
 Silent bed-shaker alarm. Pico WH (MicroPython) -> TPA3116 amp -> bass shaker.
-PWA website (Vite, plain JS) -> /api on a Cloudflare Worker (backend/, Python + FastAPI, also
-serves the site) -> EMQX Serverless REST publish API -> broker (TLS only) -> Pico over MQTT.
+PWA website (Vite, plain JS) -> /api on Vercel (api/, Python + FastAPI, one function; Vercel
+also serves the site and deploys every push to main) -> EMQX Serverless REST publish API ->
+broker (TLS only) -> Pico over MQTT.
 The website never talks to MQTT and holds no secrets. Every /api request needs the shared
 password (APP_PASSWORD, typed into the page once per device, sent as "Authorization: Bearer");
-the Worker checks it in entry.py. No Cloudflare Access (Zero Trust wants a card).
-A daily calendar check (hourly cron, runs in the hour chosen in the site's Settings) turns the
-calendar link (saved in Workers KV, else ICS_URL) into calendar alarms.
+api/index.py checks it. Vercel's cron sends CRON_SECRET, set to the same value, so it passes too.
+A daily Vercel cron (08:00 UTC, vercel.json; Hobby allows only once a day) turns the calendar
+link (saved in Upstash Redis, else ICS_URL) into calendar alarms.
 Team final project for Northeastern's Cornerstone of Engineering.
 Roadmap and MQTT topics contract: PLAN.md. See README.md for every file's job.
 
@@ -20,15 +21,16 @@ Roadmap and MQTT topics contract: PLAN.md. See README.md for every file's job.
 
 ## Commands
 - make setup / make pico-setup / make run / make stop / make logs
-- make backend-dev / make backend-deploy / make secrets (run from the repo root)
+- make dev / make deploy / make secrets (run from the repo root; Vercel CLI via npx)
 - make run uses `mpremote ... run --no-follow pico/main.py + repl`: plain
   `mpremote run` doesn't pass Ctrl-C to the Pico, which leaves the shaker running.
 
 ## Config and secrets (the repo is public)
 - One root .env (gitignored; template .env.example) holds everything.
 - Pico: scripts/gen_pico_env.py writes pico/env.py (gitignored) from .env.
-- Worker: scripts/gen_dev_vars.py copies only the backend keys to backend/.dev.vars
-  (gitignored, local dev) or uploads them as Worker secrets (`make secrets`).- Website: no config or secrets at all.
+- Server: scripts/upload_secrets.py uploads only the server keys to Vercel (`make secrets`),
+  plus CRON_SECRET = APP_PASSWORD. Upstash's KV_REST_API_* come from Vercel's Storage tab.
+- Website: no config or secrets at all.
 
 ## Hardware facts (don't change without asking)
 - Power: 24 V adapter -> amp VCC, and buck converter (5 V) -> Pico.

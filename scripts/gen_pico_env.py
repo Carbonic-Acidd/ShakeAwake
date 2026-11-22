@@ -1,6 +1,6 @@
 """Reads the root .env and writes pico/env.py, since MicroPython can't read .env files.
 
-Run by `make run`. Only the Pico keys are copied; the backend's keys never reach the Pico.
+Run by `make run`. Only the Pico keys are copied; the server's keys never reach the Pico.
 """
 import sys
 from pathlib import Path
