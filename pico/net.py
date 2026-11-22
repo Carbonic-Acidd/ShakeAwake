@@ -42,7 +42,7 @@ WIFI_POWER_SAVE_OFF = 0xA11140   # Pico W value that turns Wi-Fi power saving of
 CONNECT_TIMEOUT_S = 10
 NETWORK_ERRORS = (OSError, MQTTException)
 
-# The Worker sends UTC Unix seconds (from 1970). The rp2 port's time.time() already counts
+# The server sends UTC Unix seconds (from 1970). The rp2 port's time.time() already counts
 # from 1970; some other ports count from 2000, so check instead of assuming.
 UNIX_OFFSET = 946684800 if time.gmtime(0)[0] == 2000 else 0
 
@@ -136,7 +136,7 @@ def _go_online():
     gc.collect()   # TLS needs a big block of memory, and reconnecting can leave it fragmented
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.verify_mode = ssl.CERT_NONE   # encrypted, but the broker's certificate isn't checked yet
-    client_id = "shakeawake-" + env.DEVICE_ID   # the Worker asks EMQX about this id (online or not)
+    client_id = "shakeawake-" + env.DEVICE_ID   # the server asks EMQX about this id (online or not)
     # Passing an SSLContext makes umqtt send the host name (SNI), which EMQX Serverless requires.
     client = MQTTClient(client_id, env.MQTT_HOST, port=env.MQTT_PORT, user=env.PICO_MQTT_USER,
                         password=env.PICO_MQTT_PASS, keepalive=KEEPALIVE_S, ssl=context)

@@ -123,7 +123,7 @@
 
     <p id="status" class="status" role="status"></p>
 
-    <!-- Settings: a small window over the app. Saved on this device and on the Worker (shared by every device). -->
+    <!-- Settings: a small window over the app. Saved on this device and on the server (shared by every device). -->
     <dialog id="settings" class="settings" aria-labelledby="settings-title">
       <form id="settings-form" class="settings-form">
         <div class="settings-head">
@@ -145,18 +145,6 @@
               </button>
               <output id="val-leadMin" class="tile-value"></output>
               <button type="button" class="tile-key" data-step="1" aria-label="Wake me: more">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
-              </button>
-            </div>
-          </div>
-          <div id="tile-syncHour" class="tile" data-setting="syncHour">
-            <p class="tile-text"><span class="tile-name">Calendar check</span><span class="tile-hint">daily, New York time</span></p>
-            <div class="stepper">
-              <button type="button" class="tile-key" data-step="-1" aria-label="Calendar check: less">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
-              </button>
-              <output id="val-syncHour" class="tile-value"></output>
-              <button type="button" class="tile-key" data-step="1" aria-label="Calendar check: more">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
               </button>
             </div>

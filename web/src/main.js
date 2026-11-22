@@ -1,8 +1,8 @@
-// The page: type the password and slide to unlock (the Worker checks it; this device then
+// The page: type the password and slide to unlock (the server checks it; this device then
 // remembers it and unlocks by itself next time), then one screen:
 // the screen panel (next alarm, current alarm type), the knob (turn to choose a type, press its
 // cap to set it), the custom alarm chip, Try and Stop.
-// The Worker can't see the Pico or tell us anything back, so this device remembers the alarm
+// The server can't see the Pico or tell us anything back, so this device remembers the alarm
 // type and custom alarm it set, and Sync (which resends the calendar) is how the page learns the
 // calendar's alarms.
 import * as api from './api.js'
@@ -22,10 +22,10 @@ const VIEWS = { knock: 'cycle', rise: 'pinned' }   // how the trace draws each t
 const NAMES = Object.keys(TYPES)
 const title = (name) => name[0].toUpperCase() + name.slice(1)   // "classic" -> "Classic"
 const DEFAULT_TYPE = 'classic'
-// Settings. Saved on this device and on the Worker (for the daily calendar check and the Pico),
+// Settings. Saved on this device and on the server (for the daily calendar check and the Pico),
 // which keeps them for every device.
 const SETTINGS_KEY = 'shakeawake-settings'
-const DEFAULT_SETTINGS = { icsUrl: '', leadMin: 60, syncHour: 3, maxRunS: 90, trySeconds: 10 }
+const DEFAULT_SETTINGS = { icsUrl: '', leadMin: 60, maxRunS: 90, trySeconds: 10 }
 const DEFAULT_HOUR = 7       // the custom alarm picker opens at the next 7:00
 const HEIGHTS = { preview: 1, browsing: 0.95, armed: 0.85, idle: 0.6 }   // the trace's height in each state
 const DAWN_S = 8 * 3600      // the screen starts to glow this long before an alarm
@@ -217,7 +217,7 @@ async function chooseType() {
 }
 
 // Plays the type the knob points at on the shaker for a few seconds.
-// It only shows as playing once the Worker says the Pico got it, so an offline Pico never
+// It only shows as playing once the server says the Pico got it, so an offline Pico never
 // looks like it was about to play.
 async function tryType() {
   if (picoOnline === false || $('try').classList.contains('sending')) return refuse($('try'))
@@ -386,7 +386,7 @@ $('slide-thumb').onkeydown = (event) => {   // keyboard: Enter or Space unlocks
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); login() }
 }
 
-// Checks the typed password (or the remembered one) with the Worker.
+// Checks the typed password (or the remembered one) with the server.
 async function login() {
   if (checking) return
   const typed = $('password').value
@@ -428,12 +428,10 @@ function unlock() {
 // ---------- Settings ----------
 const minutesText = (m) => m < 60 ? `${m} min` : m % 60 ? `${Math.floor(m / 60)} h ${m % 60}` : `${m / 60} h`
 const secondsText = (s) => s < 60 || s % 60 ? `${s} s` : `${s / 60} min`
-const hourText = (h) => new Date(2000, 0, 1, h).toLocaleTimeString([], { hour: 'numeric' })
 
-// Each tile steps through its choices with - and + (the calendar check wraps round the clock).
+// Each tile steps through its choices with - and +.
 const STEPPERS = {
   leadMin: { choices: [15, 30, 45, 60, 75, 90, 120], text: minutesText },        // before the first event
-  syncHour: { choices: [...Array(24).keys()], text: hourText, wrap: true },      // New York time
   maxRunS: { choices: [30, 60, 90, 120, 180, 300], text: secondsText },          // an alarm stops itself
   trySeconds: { choices: [5, 10, 15, 20], text: secondsText },                   // Try plays
 }
@@ -444,12 +442,12 @@ function applySettings() {
   $('app').style.setProperty('--try-ms', settings.trySeconds * 1000 + 'ms')
 }
 
-// The Worker's copy wins (another device may have changed it), including the alarm type if it
+// The server's copy wins (another device may have changed it), including the alarm type if it
 // has one.
 async function fetchSettings() {
   try {
     const saved = await api.getSettings()
-    Object.assign(settings, { icsUrl: saved.ics_url, leadMin: saved.offset_min, syncHour: saved.sync_hour,
+    Object.assign(settings, { icsUrl: saved.ics_url, leadMin: saved.offset_min,
                               maxRunS: saved.max_run_s, trySeconds: saved.try_s })
     store(SETTINGS_KEY, settings)
     applySettings()
@@ -463,19 +461,19 @@ async function fetchSettings() {
 }
 
 function showDraft() {
-  for (const [key, { choices, text, wrap }] of Object.entries(STEPPERS)) {
+  for (const [key, { choices, text }] of Object.entries(STEPPERS)) {
     const at = choices.indexOf(draft[key])
     $('val-' + key).textContent = text(draft[key])
-    $('tile-' + key).querySelector('[data-step="-1"]').disabled = !wrap && at <= 0
-    $('tile-' + key).querySelector('[data-step="1"]').disabled = !wrap && at >= choices.length - 1
+    $('tile-' + key).querySelector('[data-step="-1"]').disabled = at <= 0
+    $('tile-' + key).querySelector('[data-step="1"]').disabled = at >= choices.length - 1
   }
 }
 
 function step(key, by) {
-  const { choices, wrap } = STEPPERS[key]
+  const { choices } = STEPPERS[key]
   let at = choices.indexOf(draft[key])
   if (at < 0) at = choices.findIndex((c) => c >= draft[key])   // a saved value that isn't a choice
-  at = wrap ? (at + by + choices.length) % choices.length : Math.min(choices.length - 1, Math.max(0, at + by))
+  at = Math.min(choices.length - 1, Math.max(0, at + by))
   draft[key] = choices[at]
   showDraft()
 }
@@ -490,13 +488,13 @@ function showSettings(open) {
   $('settings').showModal()
 }
 
-// Save: the Worker first (it checks the link), then this device, then a fresh calendar sync.
+// Save: the server first (it checks the link), then this device, then a fresh calendar sync.
 async function saveSettings(event) {
   event.preventDefault()
   const next = { ...draft, icsUrl: $('set-ics').value.trim() }
   $('settings-save').disabled = true
   try {
-    const reply = await api.saveSettings({ ics_url: next.icsUrl, offset_min: next.leadMin, sync_hour: next.syncHour,
+    const reply = await api.saveSettings({ ics_url: next.icsUrl, offset_min: next.leadMin,
                                            max_run_s: next.maxRunS, try_s: next.trySeconds, pattern: alarmType })
     if (typeof reply.delivered === 'boolean') setPico(reply.delivered)
   } catch (error) {

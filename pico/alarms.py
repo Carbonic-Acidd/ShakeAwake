@@ -2,7 +2,7 @@
 # Knows nothing about Wi-Fi, MQTT or the shaker.
 #
 # Two lists, each from its own retained MQTT topic and saved to its own file:
-# "calendar" (from the Worker's nightly sync) and "manual" (set on the website).
+# "calendar" (from the server's daily sync) and "manual" (set on the website).
 # Each alarm is [UTC Unix seconds, alarm type]. due(now) merges both lists.
 # The website's settings (their own retained topic, saved to SETTINGS_FILE): the alarm type,
 # which overrides every alarm's own so changing it changes calendar alarms too, and how long
@@ -10,8 +10,8 @@
 import json
 import os
 
-PAYLOAD_VERSION = 1     # the "v" field the Worker sends
-MAX_ALARMS = 20         # per list; a longer list is rejected (the Worker sends at most 7)
+PAYLOAD_VERSION = 1     # the "v" field the server sends
+MAX_ALARMS = 20         # per list; a longer list is rejected (the server sends at most 7)
 LATE_OK_S = 300         # still fire an alarm this late (e.g. power came back just after it)
 FILES = {"calendar": "calendar.json", "manual": "manual.json"}
 FIRED_FILE = "fired.json"   # time of the last alarm that fired, so a reboot can't refire it

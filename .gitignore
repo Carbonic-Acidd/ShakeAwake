@@ -5,3 +5,4 @@ pico/env.py
 node_modules/
 web/dist/
 __pycache__/
+.vercel/

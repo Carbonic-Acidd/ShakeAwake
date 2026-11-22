@@ -9,8 +9,9 @@ PY := .venv/bin/python
 endif
 
 PICO_FILES := pico/main.py pico/net.py pico/alarms.py pico/shaker.py pico/env.py
+VERCEL := npx --yes vercel@66.6.0   # the Vercel CLI, fetched on first use (also in scripts/upload_secrets.py)
 
-.PHONY: help setup pico-setup run stop logs backend-dev backend-deploy secrets
+.PHONY: help setup pico-setup run stop logs dev deploy secrets
 
 help: ## List the commands
 	@$(PYTHON) -c "import re; [print(f'make {t:12}{d}') for t, d in re.findall(r'^([a-z-]+):.*?## (.*)', open('Makefile').read(), re.M)]"
@@ -35,14 +36,11 @@ stop: ## Stop whatever is running on the Pico (shaker off)
 logs: ## Open the Pico's REPL to see its output (Ctrl-] exits)
 	$(PY) -m mpremote repl
 
-backend-dev: ## Build the website and run the Worker locally at http://localhost:8787
-	$(PY) scripts/gen_dev_vars.py
-	npm --prefix web run build
-	cd backend && uv run --no-active pywrangler dev --test-scheduled
+dev: ## Run the site and /api locally with Vercel's dev server (no cron; use the Sync button)
+	$(VERCEL) dev
 
-backend-deploy: ## Build the website and deploy the Worker to Cloudflare
-	npm --prefix web run build
-	cd backend && uv run --no-active pywrangler deploy
+deploy: ## Deploy to production from this laptop without pushing to GitHub
+	$(VERCEL) deploy --prod
 
-secrets: ## Upload the backend's values from .env to Cloudflare as Worker secrets
-	$(PY) scripts/gen_dev_vars.py --upload
+secrets: ## Upload the server's values from .env to Vercel (then redeploy)
+	$(PY) scripts/upload_secrets.py

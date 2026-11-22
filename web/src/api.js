@@ -1,6 +1,6 @@
-// The only code that talks to the network: the Worker's /api (backend/src/entry.py), which
+// The only code that talks to the network: the server's /api (backend/src/entry.py), which
 // passes commands on to the Pico. The site holds no secrets. The shared password is typed once;
-// this device remembers it and sends it with every call, and the Worker checks it.
+// this device remembers it and sends it with every call, and the server checks it.
 const PASSWORD_KEY = 'shakeawake-password'   // where this device remembers the password
 
 // localStorage can be blocked (e.g. private browsing); then the password lasts until reload.
@@ -16,8 +16,8 @@ function forgetPassword() {
   try { localStorage.removeItem(PASSWORD_KEY) } catch {}
 }
 
-// Calls the Worker. Returns its reply, or throws an Error whose message suits the page:
-// "wrong password" (and forgets it), "no connection", or the Worker's own reason.
+// Calls the server. Returns its reply, or throws an Error whose message suits the page:
+// "wrong password" (and forgets it), "no connection", or the server's own reason.
 async function api(method, path, body) {
   let response
   try {

@@ -1,30 +1,32 @@
 # Turns a calendar link into alarms: for each of the next DAYS days, the first timed event's
 # start minus the lead time. All-day events are ignored; empty days get no alarm.
-# entry.py decides which link and lead time (the website's saved settings, else .env).
+# index.py decides which link and lead time (the website's saved settings, else the env vars).
 from datetime import datetime, time, timedelta
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 import icalendar
 import recurring_ical_events
-from workers import fetch
 
 ZONE = ZoneInfo("America/New_York")   # whose "days" count, and the zone for floating times
 DAYS = 7
 PATTERN = "classic"                   # calendar alarms' type (the website's alarm type overrides it on the Pico)
+TIMEOUT_S = 15
 
 
-async def alarms(url, offset_min, now):
+def alarms(url, offset_min, now):
     """Returns [[UTC Unix seconds, pattern], ...] in time order, only alarms after now."""
     if not url:
         raise RuntimeError("No calendar link yet: add one in Settings")
     url = url.replace("webcal://", "https://", 1)   # calendar apps often hand out webcal:// links
     try:
-        response = await fetch(url)
-        text = await response.text()
+        with urlopen(Request(url, headers={"User-Agent": "ShakeAwake"}), timeout=TIMEOUT_S) as response:
+            text = response.read().decode("utf-8", errors="replace")
+    except HTTPError as e:
+        raise RuntimeError(f"Calendar fetch said {e.code}")
     except Exception as e:
         raise RuntimeError(f"Couldn't fetch the calendar: {e}")
-    if response.status != 200:
-        raise RuntimeError(f"Calendar fetch said {response.status}")
     offset = timedelta(minutes=offset_min)
     try:
         return compute(text, now, offset)
