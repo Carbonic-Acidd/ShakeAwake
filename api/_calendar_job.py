@@ -7,7 +7,9 @@ import icalendar
 import recurring_ical_events
 
 ZONE = ZoneInfo("America/New_York")
-DAYS = 7
+DAYS = 4
+MORNING_CUTOFF = time(13)
+FALLBACK_WAKE = time(10)
 TIMEOUT_S = 15
 
 
@@ -39,7 +41,13 @@ def first_event_alarms(ics_text, now, offset):
         if not isinstance(start, datetime) or event.get("STATUS") == "CANCELLED":
             continue
         start = (start if start.tzinfo else start.replace(tzinfo=ZONE)).astimezone(ZONE)
-        if start.date() in days:
+        if start.date() in days and start.time() < MORNING_CUTOFF:
             first[start.date()] = min(first.get(start.date(), start), start)
     alarms = [int((first[day] - offset).timestamp()) for day in sorted(first)]
-    return [alarm for alarm in alarms if alarm > now.timestamp()]
+    alarms = [alarm for alarm in alarms if alarm > now.timestamp()]
+    if alarms:
+        return alarms
+    fallback = datetime.combine(days[0], FALLBACK_WAKE, ZONE)
+    if fallback <= now:
+        fallback = datetime.combine(days[1], FALLBACK_WAKE, ZONE)
+    return [int(fallback.timestamp())]

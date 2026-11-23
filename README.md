@@ -8,8 +8,8 @@ puts a small vibration motor under your mattress that shakes only you awake, qui
 right time.
 
 ## What it does
-- **Wakes you from your calendar.** Every day it looks at the next week of your calendar and sets
-  an alarm a chosen time before your first event each day.
+- **Wakes you from your calendar.** Every day it looks at the next few days of your calendar and sets
+  an alarm a chosen time before your first morning event (before 1 PM), or 10 AM if there are none.
 - **Custom alarms.** Pick any date and time from your phone.
 - **Four vibration styles.** Classic, Waves, Rise and Knock. Try each one from your phone.
 - **Works without internet.** Alarms are saved on the device itself, so they still go off if the

@@ -31,9 +31,10 @@ Every request needs `Authorization: Bearer <APP_PASSWORD>`; anything else gets a
 Commands reply `{"delivered": bool}`: whether the Pico was listening.
 
 ## Behavior
-Calendar alarms: for each of the next 7 days (America/New_York), the first timed event's start
-minus the lead time. All-day and cancelled events are ignored, days without events get no alarm,
-and only future alarms are sent. If the calendar can't be read, nothing is published, so the Pico
+Calendar alarms: for today and the next 3 days (America/New_York), the first timed event that
+starts before 1 PM, minus the lead time. All-day, cancelled and afternoon events are ignored, days
+without a morning event get no alarm, and only future alarms are sent. If none are left, one alarm
+at the next 10 AM is sent instead. If the calendar can't be read, nothing is published, so the Pico
 keeps the last good list.
 
 Alarm types (`pico/shaker.py`, mirrored by `TYPES` in `web/src/main.js`): classic (short, short,

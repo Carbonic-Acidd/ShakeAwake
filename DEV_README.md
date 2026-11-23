@@ -29,7 +29,8 @@ Vercel cron (08:00 UTC) calls `/api/cron` to turn the calendar into alarms.
 - **Set the alarm type or Settings:** the page calls `PUT /api/settings`. The server saves
   everything in Redis and publishes the Pico's part, `{"pattern", "max_run_s"}`, as retained.
 - **Sync (or the daily cron):** the server reads the calendar link, works out the first timed
-  event of each of the next 7 days minus the lead time, and publishes the list as retained.
+  event before 1 PM of today and the next 3 days minus the lead time (or the next 10 AM if
+  there are none), and publishes the list as retained.
 - **Press Try or Stop:** the server publishes a non-retained command on `shakeawake/<id>/cmd`. The
   reply says whether the Pico was listening (`delivered`), which updates the online dot.
 - **Open the page:** it logs in with `GET /api/settings`, syncs the calendar, and asks
