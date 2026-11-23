@@ -90,7 +90,7 @@ Build a check harness in the scratchpad; it is never committed.
 
 Save the outputs as the baseline. A step that changes an output on purpose updates the harness in the same commit and says what changed.
 
-### Step 1: Delete `.claude/settings.json`
+### ✅ Step 1: Delete `.claude/settings.json`
 - Lines: −14.
 - Check: harness unchanged.
 
