@@ -21,7 +21,7 @@ Where it differs from the plan:
 - `.tile-key` was not folded into the shared key rule: the shared rule adds a hover lift, which
   would change how the tiles look.
 - `UNIX_OFFSET` was removed without reading the Pico's boot log (no Pico was plugged in). The
-  rp2 port counts from 1970; if the first boot prints a time near 2000-01-01 + 30 years, put it back.
+  rp2 port counts from 1970. If `Time: set,` prints about 8.2e8 instead of about 1.76e9, put it back.
 
 Lines (text files; PNGs and package-lock excluded):
 
