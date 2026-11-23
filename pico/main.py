@@ -1,5 +1,3 @@
-# Shake Awake entry point, runs on boot. Wires the shaker, the alarms and the network together.
-# Works offline: saved alarms load from flash, and fire on time once the clock has been set.
 import json
 import time
 
@@ -7,12 +5,11 @@ import alarms
 import net
 import shaker
 
-LOOP_MS = 10            # how often the shaker, the network and the alarms are serviced
-ERROR_PAUSE_S = 5       # after an unexpected error, wait this long and carry on (never restart)
-DEFAULT_TEST_S = 10     # test length when the message doesn't say
-MAX_TEST_S = 90         # tests play no longer than this (alarms: alarms.max_run_s(), set on the website)
+LOOP_MS = 10
+ERROR_PAUSE_S = 5
+MAX_TEST_S = 90
 
-stop_at = None          # ticks_ms when the playing pattern stops; None when silent
+stop_at = None
 
 
 def play(name, seconds, test=False):
@@ -30,51 +27,44 @@ def silence():
     stop_at = None
 
 
+def check_pattern(name):
+    if name not in shaker.PATTERNS:
+        raise ValueError("unknown alarm type " + str(name))
+
+
 def on_message(topic, payload):
-    if topic == net.CMD_TOPIC:
-        try:
-            data = json.loads(payload)
-            if data["cmd"] == "stop":
-                silence()
-                return
-            if data["cmd"] != "test":
-                raise ValueError("unknown command")
-            name = data["pattern"]
-            seconds = max(0, min(float(data.get("seconds", DEFAULT_TEST_S)), MAX_TEST_S))
-            shaker.PATTERNS[name]   # raises KeyError if the name is unknown
-        except Exception as e:
-            print("Ignored bad command:", payload, repr(e))
-            return
-        play(name, seconds, test=True)
-    elif topic == net.SETTINGS_TOPIC:
-        try:
-            if alarms.set_settings(payload, shaker.PATTERNS):
+    if topic == "status":
+        return
+    try:
+        data = json.loads(payload)
+        if topic == "cmd" and data["cmd"] == "stop":
+            silence()
+        elif topic == "cmd" and data["cmd"] == "test":
+            check_pattern(data["pattern"])
+            play(data["pattern"], max(0, min(float(data["seconds"]), MAX_TEST_S)), test=True)
+        elif topic == "settings":
+            check_pattern(data["pattern"])
+            if alarms.set_settings(data["pattern"], data["max_run_s"]):
                 print("Settings:", payload)
-        except ValueError as e:
-            print("Ignored bad settings:", payload, repr(e))
-    elif topic in net.ALARM_TOPICS:
-        name = net.ALARM_TOPICS[topic]
-        try:
-            if alarms.update(name, payload, shaker.PATTERNS):
-                print("Alarms: new", name, "list", payload)
-        except ValueError as e:
-            print("Ignored bad", name, "alarms:", payload, repr(e))
+        elif topic in ("alarms/calendar", "alarms/manual"):
+            if alarms.set_list(topic.split("/")[1], data):
+                print("Alarms: new", topic, payload)
+        else:
+            raise ValueError("unknown message")
+    except Exception as e:
+        print("Ignored", topic, payload, repr(e))
 
 
 def step():
     shaker.update()
-    net.service(busy=stop_at is not None)   # busy: skip anything that could freeze the pattern
+    net.service(busy=stop_at is not None)
     if stop_at is not None and time.ticks_diff(time.ticks_ms(), stop_at) >= 0:
         silence()
-    # No clock battery: until NTP has worked once since boot, the time is meaningless.
-    if net.clock_ok():
-        alarm = alarms.due(net.unix_time())
-        if alarm:
-            alarms.mark_fired(alarm[0])   # saved first, so a reboot mid-alarm doesn't refire it
-            print("Alarm!", alarm)
-            # An alarm saved before a type was renamed must still wake you, so fall back.
-            name = alarm[1] if alarm[1] in shaker.PATTERNS else shaker.DEFAULT
-            play(name, alarms.max_run_s())   # until Stop, or the time set on the website
+    alarm = net.clock_ok and alarms.due(time.time())
+    if alarm:
+        alarms.mark_fired(alarm)
+        print("Alarm!", alarm)
+        play(alarms.state["pattern"], alarms.state["max_run_s"])
 
 
 try:
@@ -84,13 +74,12 @@ try:
     while True:
         try:
             step()
-        except Exception as e:   # a bug, not the network (net.py handles that). Ctrl-C isn't an Exception.
+        except Exception as e:
             silence()
             print("Error:", repr(e), "- carrying on in", ERROR_PAUSE_S, "s")
             time.sleep(ERROR_PAUSE_S)
         time.sleep_ms(LOOP_MS)
 finally:
-    # PWM keeps running after a script stops, so always switch it off.
     shaker.stop()
     print("Shaker off")
-    net.stop()   # tell the broker we're going, so the website shows offline right away
+    net.stop()

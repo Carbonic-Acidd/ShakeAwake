@@ -38,7 +38,7 @@ export async function login(typed) {
 }
 
 export const sync = async () => (await api('POST', 'sync')).alarms
-export const setAlarm = (time, pattern) => api('PUT', 'alarm', { time, pattern })
+export const setAlarm = (time) => api('PUT', 'alarm', { time })
 export const clearAlarm = () => api('DELETE', 'alarm')
 export const test = (pattern, seconds) => api('POST', 'test', { pattern, seconds })
 export const stop = () => api('POST', 'stop')

@@ -8,7 +8,6 @@ import recurring_ical_events
 
 ZONE = ZoneInfo("America/New_York")
 DAYS = 7
-PATTERN = "classic"
 TIMEOUT_S = 15
 
 
@@ -43,4 +42,4 @@ def first_event_alarms(ics_text, now, offset):
         if start.date() in days:
             first[start.date()] = min(first.get(start.date(), start), start)
     alarms = [int((first[day] - offset).timestamp()) for day in sorted(first)]
-    return [[alarm, PATTERN] for alarm in alarms if alarm > now.timestamp()]
+    return [alarm for alarm in alarms if alarm > now.timestamp()]

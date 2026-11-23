@@ -231,7 +231,7 @@ async function stop() {
 async function setCustom() {
   const time = pickedTime()
   if (time <= now()) return shake($('custom-pick'))
-  if (await run(() => api.setAlarm(time, settings.pattern))) {
+  if (await run(() => api.setAlarm(time))) {
     setManual(time)
     render()
   }
@@ -251,7 +251,7 @@ async function sync() {
   const alarms = await run(api.sync, 'Sync failed: ')
   button.dataset.state = alarms ? 'done' : ''
   if (!alarms) return shake(button)
-  calendarNext = alarms.length ? alarms[0][0] : 0
+  calendarNext = alarms[0] || 0
   setTimeout(() => { button.dataset.state = '' }, DONE_MS)
   render()
 }

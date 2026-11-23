@@ -15,7 +15,6 @@ from api import _emqx as emqx
 DEVICE_ID = os.environ.get("DEVICE_ID") or "bed1"
 TOPIC = f"shakeawake/{DEVICE_ID}/"
 PICO_CLIENT_ID = "shakeawake-" + DEVICE_ID
-PAYLOAD_VERSION = 1
 MAX_TEST_S = 90
 REDIS_TIMEOUT_S = 10
 LINK_STARTS = ("https://", "http://", "webcal://")
@@ -30,7 +29,6 @@ class Test(BaseModel):
 
 class Alarm(BaseModel):
     time: int
-    pattern: str = Field(min_length=1, max_length=20)
 
 
 class Settings(BaseModel):
@@ -61,16 +59,11 @@ def load_settings():
 
 def save_settings(settings):
     redis("set/settings", settings.model_dump_json())
-    pico_settings = {"v": PAYLOAD_VERSION, "pattern": settings.pattern, "max_run_s": settings.max_run_s}
-    return send("settings", pico_settings, retain=True)
+    return send("settings", settings.model_dump(include={"pattern", "max_run_s"}), retain=True)
 
 
 def send(subtopic, payload, retain=False):
     return {"delivered": emqx.publish(TOPIC + subtopic, payload, retain=retain, qos=1 if retain else 0)}
-
-
-def alarms_message(alarms):
-    return {"v": PAYLOAD_VERSION, "gen": int(time.time()), "alarms": alarms}
 
 
 @app.exception_handler(RuntimeError)
@@ -106,12 +99,12 @@ def stop():
 def set_alarm(body: Alarm):
     if body.time <= time.time():
         raise HTTPException(400, "Pick a time in the future")
-    return send("alarms/manual", alarms_message([[body.time, body.pattern]]), retain=True)
+    return send("alarms/manual", [body.time], retain=True)
 
 
 @app.delete("/api/alarm")
 def clear_alarm():
-    return send("alarms/manual", alarms_message([]), retain=True)
+    return send("alarms/manual", [], retain=True)
 
 
 @app.get("/api/settings")
@@ -133,6 +126,6 @@ def sync():
     settings = load_settings()
     url = settings.ics_url or os.environ.get("ICS_URL")
     alarms = calendar_job.alarms(url, settings.offset_min, datetime.now(timezone.utc))
-    emqx.publish(TOPIC + "alarms/calendar", alarms_message(alarms), retain=True, qos=1)
+    emqx.publish(TOPIC + "alarms/calendar", alarms, retain=True, qos=1)
     print("Calendar sync:", len(alarms), "alarms")
     return {"alarms": alarms}

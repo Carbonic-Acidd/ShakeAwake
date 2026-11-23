@@ -1,5 +1,3 @@
-# Shake Awake commands. Run `make help` to list them.
-
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
 PY := .venv/Scripts/python
@@ -9,7 +7,7 @@ PY := .venv/bin/python
 endif
 
 PICO_FILES := pico/main.py pico/net.py pico/alarms.py pico/shaker.py pico/env.py
-VERCEL := npx --yes vercel@66.6.0   # the Vercel CLI, fetched on first use (also in scripts/upload_secrets.py)
+VERCEL := npx --yes vercel@66.6.0
 
 .PHONY: help setup pico-setup run stop logs dev deploy secrets
 
@@ -24,8 +22,6 @@ setup: ## Create .venv, install the Python tools and the web packages
 pico-setup: ## Install umqtt.simple on the Pico (once per Pico)
 	$(PY) -m mpremote mip install umqtt.simple
 
-# `run --no-follow ... + repl` instead of plain `run`: only the REPL passes Ctrl-C
-# on to the Pico, so the code's finally block runs and the shaker stops.
 run: ## Copy the code to the Pico and run it (Ctrl-C stops it, then Ctrl-] exits)
 	$(PY) scripts/gen_pico_env.py
 	$(PY) -m mpremote cp $(PICO_FILES) : + run --no-follow pico/main.py + repl
