@@ -57,11 +57,6 @@ def load_settings():
     return Settings.model_validate_json(saved) if saved else Settings()
 
 
-def save_settings(settings):
-    redis("set/settings", settings.model_dump_json())
-    return send("settings", settings.model_dump(include={"pattern", "max_run_s"}), retain=True)
-
-
 def send(subtopic, payload, retain=False):
     return {"delivered": emqx.publish(TOPIC + subtopic, payload, retain=retain, qos=1 if retain else 0)}
 
@@ -117,7 +112,8 @@ def put_settings(body: Settings):
     body.ics_url = body.ics_url.strip()
     if body.ics_url and not body.ics_url.lower().startswith(LINK_STARTS):
         raise HTTPException(400, "The calendar link should start with https:// or webcal://")
-    return save_settings(body)
+    redis("set/settings", body.model_dump_json())
+    return send("settings", body.model_dump(include={"pattern", "max_run_s"}), retain=True)
 
 
 @app.get("/api/cron")
@@ -126,6 +122,6 @@ def sync():
     settings = load_settings()
     url = settings.ics_url or os.environ.get("ICS_URL")
     alarms = calendar_job.alarms(url, settings.offset_min, datetime.now(timezone.utc))
-    emqx.publish(TOPIC + "alarms/calendar", alarms, retain=True, qos=1)
+    send("alarms/calendar", alarms, retain=True)
     print("Calendar sync:", len(alarms), "alarms")
     return {"alarms": alarms}

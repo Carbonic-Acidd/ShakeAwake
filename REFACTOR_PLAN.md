@@ -1,6 +1,64 @@
 # Shake Awake refactor plan
 
-Status: in progress. Done steps are marked ✅.
+Status: ✅ all code steps done and committed (not pushed). The hardware test below is still to do.
+
+## Result
+Steps that rewrote the same files were done together, so the commits are grouped by area rather
+than one per step:
+
+| Commit | Steps |
+|---|---|
+| Add the refactor plan | 0 |
+| Delete the stale .claude/settings.json allowlist | 1 |
+| Server: one error handler, settings defaults in the model, sync and cron merged, no comments | 2, 5, 6 (server parts) |
+| CSS: merge duplicate rules, drop unused tokens and comments | 2, 3, 4 (CSS parts) |
+| Website: one settings endpoint and no local copies, no roll-backs, tiles built from STEPPERS, no comments | 4, 7, 8 |
+| Pico cleanup and a smaller message format | 5 (scripts), 9, 10 |
+| Docs | 11 |
+| Final simplifier pass | code-simplifier agent: `save_settings` inlined, `sync` uses `send` |
+
+Where it differs from the plan:
+- `.tile-key` was not folded into the shared key rule: the shared rule adds a hover lift, which
+  would change how the tiles look.
+- `UNIX_OFFSET` was removed without reading the Pico's boot log (no Pico was plugged in). The
+  rp2 port counts from 1970; if the first boot prints a time near 2000-01-01 + 30 years, put it back.
+
+Lines (text files; PNGs and package-lock excluded):
+
+| | Before | After |
+|---|---|---|
+| Tracked files | 33 | 32 (with this plan) |
+| pico/ | 474 | 353 |
+| api/ | 363 | 224 |
+| web/ | 1,714 | 1,508 |
+| scripts/ | 76 | 53 |
+| root files and docs | 371 | 324 |
+| **Total** | **2,998** | **2,462** |
+| API endpoints | 10 | 8 |
+| Flash files on the Pico | 4 | 1 |
+| Dependencies | 7 | 7 |
+
+Every step was checked with a harness kept outside the repo:
+- Compile, `node --check` and `vite build`.
+- A FastAPI TestClient run of every route, with fake EMQX and Redis.
+- The calendar on a sample ICS.
+- The Pico's `main`/`alarms`/`shaker` under CPython, with fake hardware.
+
+The only output changes were the planned ones (no `ok`, no `v`/`gen`, bare alarm lists, the
+`classic` default, the health and type routes gone).
+
+### Still to do: hardware test ⚠ (steps 9 and 10 together)
+1. Push to main (Vercel deploys the site and `/api` together), and run `make run` with the Pico plugged in.
+2. Once, delete the old flash files: `.venv/Scripts/python -m mpremote rm :calendar.json :manual.json :fired.json :settings.json`.
+3. The log shows "MQTT: online" and `Time: set, 17...` (a 2026 Unix time).
+4. Press Sync; the log shows `Alarms: new alarms/calendar [...]`.
+5. Turn the knob and set a type; the log shows `Settings: ...`.
+6. Try each of the 4 types and feel it; Stop cuts it off.
+7. Set your custom alarm again, 2 min ahead. It fires with the chosen type, and stops after "Alarm stops after".
+8. Set one 3 min ahead and turn the hotspot off. The website shows offline within ~30 s, and the alarm still fires. Turn the hotspot on; it's back online.
+9. Leave it idle 5 min; it stays online (15 s pings).
+10. Ctrl-C while it plays: the shaker stops and the log prints "Shaker off".
+11. Unplug and replug the Pico: `Alarms: loaded {...}` shows the saved alarms.
 
 ## Goal
 The smallest, most readable repo that still does everything it does today, readable top to
@@ -94,29 +152,29 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
 - Lines: −14.
 - Check: harness unchanged.
 
-### Step 2: Delete dead web and server code
+### ✅ Step 2: Delete dead web and server code
 - `api.js`: the legacy `removeItem`.
 - `tokens.css`: the 3 unused tokens.
 - `index.py`: every `"ok": True`.
 - Lines: ~−5.
 - Check: harness unchanged, except that replies lose `ok`.
 
-### Step 3: CSS duplicates
+### ✅ Step 3: CSS duplicates
 - `style.css`: one `.trace svg`, one `.trace path` and one `.top` rule each. `.tile-key` joins the shared raised-key rule.
 - Lines: ~−12.
 - Check: build. **Visual:** in `make dev`, compare lock, main, Settings, a short phone and a wide desktop against step 0 screenshots. They should look identical.
 
-### Step 4: Remove the web comments
+### ✅ Step 4: Remove the web comments
 - Files: `main.js`, `wave.js`, `api.js`, `sw.js`, `style.css`, `tokens.css`, `index.html`. Rename the wave.js constants that become unclear.
 - Lines: ~−170.
 - Check: `node --check`, build, and the visual check.
 
-### Step 5: Remove the server and script comments
+### ✅ Step 5: Remove the server and script comments
 - Files: `api/*.py` (docstrings too), `scripts/*.py`, the `env.py` header line, Makefile comments (the `##` help text stays because `make help` reads it), and `.env.example`. The "where to find this key" notes move to README setup.
 - Lines: ~−75 code, ~+10 README.
 - Check: harness unchanged. `make help` works. `gen_pico_env.py` output is the same minus its header.
 
-### Step 6: Simplify the server internals (same API from outside)
+### ✅ Step 6: Simplify the server internals (same API from outside)
 - One `RuntimeError` → 502 handler.
 - The `Settings` model holds the defaults, and `load_settings()` returns a `Settings`.
 - One password function.
@@ -125,7 +183,7 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
 - Lines: ~−40.
 - Check: harness unchanged.
 
-### Step 7: Login, settings and type use one endpoint (web + server)
+### ✅ Step 7: Login, settings and type use one endpoint (web + server)
 - Login calls `GET /api/settings` and the page uses that reply, so `/api/health` goes.
 - The type is saved through `PUT /api/settings`, so `/api/type`, `AlarmType` and `api.setType` go.
 - The web uses `settings.pattern` instead of its own `alarmType`, and the server's key names everywhere. The local settings and type caches go.
@@ -137,7 +195,7 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
   4. Change each Settings stepper and Save; open on a second device and see the same values.
   5. Log out, and it asks for the password again.
 
-### Step 8: Simplify the web actions
+### ✅ Step 8: Simplify the web actions
 - The type, set custom and clear custom actions wait for the server; there is no roll-back.
 - `sync()` uses `run()`.
 - The custom alarm is one number.
@@ -151,7 +209,7 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
   5. The Settings tiles look and step exactly as before, including keyboard Tab and Enter.
   6. Let a custom alarm pass, and the chip goes back to "Set custom alarm".
 
-### Step 9: Pico cleanup ⚠ HARDWARE TEST
+### ✅ Step 9: Pico cleanup ⚠ HARDWARE TEST
 - Before editing: run `make logs`, reboot, and confirm it prints `Clock epoch: 1970`. If it prints 2000, `UNIX_OFFSET` stays.
 - Changes:
   - Remove the comments and the dead code (`online()`, `UNIX_OFFSET`, `DEFAULT_TEST_S`, `type.json`).
@@ -169,7 +227,7 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
   5. Ctrl-C while it plays. The shaker stops and the log prints "Shaker off".
   6. Leave it idle for 5 min. The website stays "online" the whole time; this checks the 15 s ping.
 
-### Step 10: New message format (Pico + server + web) ⚠ HARDWARE TEST
+### ✅ Step 10: New message format (Pico + server + web) ⚠ HARDWARE TEST
 - The new format:
   - Alarms: a bare list of times, `[1763290800, 1763377200]`.
   - Settings: `{"pattern": "rise", "max_run_s": 90}`, where `pattern` is never null and defaults to `"classic"`.
@@ -186,7 +244,7 @@ Save the outputs as the baseline. A step that changes an output on purpose updat
   5. Set a custom alarm 2 min ahead; it fires with the chosen type.
   6. Unplug the Pico, turn the hotspot off and replug. `Alarms: loaded ...` shows the saved alarms (the clock waits for NTP, as before). Turn the hotspot back on.
 
-### Step 11: Docs
+### ✅ Step 11: Docs
 - PLAN.md: only the MQTT contract and how the system behaves, with stale facts fixed.
 - README: a short "Why it's built this way" list:
   - Wi-Fi power saving is off.

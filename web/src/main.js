@@ -257,7 +257,7 @@ async function sync() {
 }
 
 let knobDrag = null
-const typeAt = (angle) => (((Math.round((angle - ANGLES[0]) / 90)) % NAMES.length) + NAMES.length) % NAMES.length
+const typeAt = (angle) => ((Math.round((angle - ANGLES[0]) / 90) % NAMES.length) + NAMES.length) % NAMES.length
 const snap = (angle) => ANGLES[0] + 90 * Math.round((angle - ANGLES[0]) / 90)
 function pointerAngle(event) {
   const box = $('knob').getBoundingClientRect()
