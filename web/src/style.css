@@ -1,5 +1,3 @@
-/* Layout and components. Every color, size, radius and timing comes from tokens.css. */
-
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { height: 100%; }
@@ -38,7 +36,6 @@ button:active { transform: scale(var(--press-scale)); }
 }
 .icon-fill { fill: currentColor; stroke: none; }
 
-/* Wrong input: a decaying side-to-side shake, like the shaker settling */
 .shake { animation: shake var(--dur-slow) var(--ease-out); }
 @keyframes shake {
   15% { translate: -0.75rem; }
@@ -47,7 +44,7 @@ button:active { transform: scale(var(--press-scale)); }
   60% { translate: 0.25rem; }
   75% { translate: -0.1rem; }
 }
-.nudge { animation: nudge var(--dur-slow) var(--ease-out); }   /* a smaller shake (Try refused) */
+.nudge { animation: nudge var(--dur-slow) var(--ease-out); }
 @keyframes nudge {
   15% { translate: -0.3rem; }
   35% { translate: 0.22rem; }
@@ -57,7 +54,6 @@ button:active { transform: scale(var(--press-scale)); }
 @keyframes spin { to { rotate: 1turn; } }
 @keyframes pop { from { scale: 0.4; } }
 
-/* A sunk well: the password track and the custom alarm chip */
 .slide, .custom-pick {
   height: var(--control-h);
   border-radius: var(--radius-sm);
@@ -65,7 +61,6 @@ button:active { transform: scale(var(--press-scale)); }
   box-shadow: var(--shadow-inset), 0 0 0 1px var(--navy-600);
   transition: box-shadow var(--dur) var(--ease-out);
 }
-/* A raised key: everything you press */
 .sync, .key, .custom-clear {
   display: flex;
   align-items: center;
@@ -81,7 +76,6 @@ button:active { transform: scale(var(--press-scale)); }
   .sync:hover, .key:hover, .custom-clear:hover { translate: 0 var(--lift); color: var(--ink); }
 }
 
-/* ---------- Locked ---------- */
 .lock {
   height: 100dvh;
   display: grid;
@@ -92,8 +86,6 @@ button:active { transform: scale(var(--press-scale)); }
 }
 .lock-logo { width: var(--logo-lock-w); height: auto; view-transition-name: logo; }
 
-/* Password and slide to unlock, one control: type into the track, then drag the handle across
-   it. JS sets --x (px) and --progress (0..1) while dragging, and data-ready once something's typed. */
 .slide {
   --x: 0px;
   --progress: 0;
@@ -102,7 +94,7 @@ button:active { transform: scale(var(--press-scale)); }
   height: var(--slide-h);
   padding: var(--space-1);
   touch-action: none;
-  view-transition-name: screen;   /* on unlock, the track opens into the screen */
+  view-transition-name: screen;
 }
 .slide:focus-within { box-shadow: var(--shadow-inset), 0 0 0 1px var(--accent-mid), var(--glow); }
 .slide.shake { box-shadow: var(--shadow-inset), 0 0 0 1px var(--accent-start); }
@@ -115,12 +107,12 @@ button:active { transform: scale(var(--press-scale)); }
   outline: none;
   border-radius: inherit;
   background: none;
-  font-size: var(--text-md);   /* 16 px or more, so iOS doesn't zoom in */
+  font-size: var(--text-md);
   opacity: calc(1 - var(--progress));
 }
-.slide input:focus-visible { box-shadow: none !important; }   /* the whole track glows instead */
+.slide input:focus-visible { box-shadow: none !important; }
 .slide input::placeholder { color: var(--ink-faint); }
-.slide::before {   /* the gradient trail behind the handle, sweeping over the password */
+.slide::before {
   content: '';
   position: absolute;
   inset: var(--space-1) auto var(--space-1) var(--space-1);
@@ -149,15 +141,13 @@ button:active { transform: scale(var(--press-scale)); }
   touch-action: none;
 }
 .slide-thumb svg { width: 72%; height: 72%; opacity: 0.4; filter: grayscale(1); transition: opacity var(--dur), filter var(--dur); }
-/* Once a password is typed, the handle lights up: ready to slide */
 .slide[data-ready] .slide-thumb { box-shadow: var(--shadow-1), var(--glow); }
 .slide[data-ready] .slide-thumb svg { opacity: 1; filter: none; }
 .slide.dragging .slide-thumb, .slide.dragging::before { transition: none; }
 .slide.dragging .slide-thumb { cursor: grabbing; }
 .slide.checking .slide-thumb svg { animation: throb 0.8s var(--ease-out) infinite; }
-@keyframes throb { 50% { opacity: 0.45; } }   /* a soft fade while the password is checked */
+@keyframes throb { 50% { opacity: 0.45; } }
 
-/* ---------- Unlocked: one screen, no scrolling ---------- */
 .app {
   --dawn: 0;
   height: 100dvh;
@@ -169,14 +159,13 @@ button:active { transform: scale(var(--press-scale)); }
   grid-template-areas: "top" "device";
 }
 
-/* One device body holding the screen, the knob, the custom alarm and the keys */
 .device {
   grid-area: device;
   min-height: 0;
   display: grid;
   gap: var(--space-3);
   padding: var(--device-pad);
-  border-radius: calc(var(--radius-lg) + var(--device-pad));   /* concentric with the screen inside */
+  border-radius: calc(var(--radius-lg) + var(--device-pad));
   background: var(--sheen), var(--device);
   box-shadow: var(--device-edge), var(--shadow-2);
   grid-template-columns: minmax(0, 1fr);
@@ -184,15 +173,13 @@ button:active { transform: scale(var(--press-scale)); }
   grid-template-areas: "screen" "deck" "custom" "keys";
 }
 
-/* Entrance after unlock: one short stagger */
 .app.enter .rise { animation: rise var(--dur-slow) var(--ease-out) both; animation-delay: calc(var(--i) * var(--stagger)); }
 @keyframes rise { from { opacity: 0; translate: 0 1rem; } }
 ::view-transition-group(*) { animation-duration: var(--dur-slow); animation-timing-function: var(--ease-out); }
 
-.top { grid-area: top; display: flex; justify-content: center; padding-block: var(--space-1); }
+.top { position: relative; grid-area: top; display: flex; justify-content: center; padding-block: var(--space-1); }
 .brand-logo { width: var(--logo-header-w); height: auto; view-transition-name: logo; }
 
-/* The screen: dark glass set into the device; glows from inside as the alarm nears */
 .screen {
   grid-area: screen;
   container-type: inline-size;
@@ -223,20 +210,24 @@ button:active { transform: scale(var(--press-scale)); }
 .screen-until { min-height: 1lh; font-size: var(--text-md); font-weight: var(--weight-strong); }
 .screen[data-empty] .screen-time { color: var(--ink-faint); }
 .trace { min-height: 0; margin-inline: calc(-1 * var(--space-4)); }
-.trace svg { display: block; width: 100%; height: 100%; overflow: visible; transition: filter var(--dur-slow) var(--ease-out); }
+.trace svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: filter var(--dur-slow) var(--ease-out), opacity var(--dur-slow) var(--ease-out);
+}
 .trace path {
   fill: none;
   stroke: url(#accent-live);
   stroke-width: var(--wave-stroke-live);
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: stroke-width var(--dur) var(--ease-out);
 }
 .trace[data-live] svg { filter: var(--glow-drop); }
-/* Pico offline: the trace loses its signal (grey and dim) and Try looks muted */
-.trace svg { transition: filter var(--dur-slow) var(--ease-out), opacity var(--dur-slow) var(--ease-out); }
 .app[data-pico="offline"] .trace svg { filter: grayscale(1); opacity: 0.3; }
 .app[data-pico="offline"] :is(#try, .stop) { color: var(--ink-faint); background: var(--navy-800); box-shadow: var(--shadow-inset); }
-.trace path { transition: stroke-width var(--dur) var(--ease-out); }
 .app[data-playing] .trace svg { filter: var(--glow-drop-strong); }
 .app[data-playing] .trace path { stroke-width: var(--wave-stroke-preview); }
 
@@ -249,7 +240,6 @@ button:active { transform: scale(var(--press-scale)); }
   font-weight: var(--weight-strong);
 }
 
-/* Is the Pico connected? A small dot: green when online, red when offline */
 .pico { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); white-space: nowrap; }
 .pico[data-state="unknown"] { visibility: hidden; }
 .pico-dot { --dot: var(--status-online); width: var(--space-2); height: var(--space-2); border-radius: 50%;
@@ -257,7 +247,7 @@ button:active { transform: scale(var(--press-scale)); }
 .pico[data-state="online"] { color: var(--status-online); }
 .pico[data-state="offline"] { color: var(--status-offline); }
 .pico[data-state="offline"] .pico-dot { --dot: var(--status-offline); }
-.pico.flare .pico-dot { animation: flare 0.9s var(--ease-out); }   /* Try refused: the red dot flares */
+.pico.flare .pico-dot { animation: flare 0.9s var(--ease-out); }
 @keyframes flare {
   30% { scale: 1.9; box-shadow: 0 0 1rem var(--dot), 0 0 0 0.3rem color-mix(in srgb, var(--dot) 30%, transparent); }
 }
@@ -277,7 +267,6 @@ button:active { transform: scale(var(--press-scale)); }
 .sync[data-state="done"] .icon-sync { display: none; }
 .sync[data-state="done"] .icon-done { display: block; animation: pop var(--dur) var(--ease-spring); }
 
-/* The knob, its scale of ticks, the type names around it, and the cap you press to set */
 .deck {
   grid-area: deck;
   position: relative;
@@ -288,7 +277,7 @@ button:active { transform: scale(var(--press-scale)); }
 }
 .knob, .knob-scale, .knob-cap { grid-area: 1 / 1; border-radius: 50%; }
 .knob-labels { display: contents; }
-.knob-scale {   /* ticks all the way round; brighter ones at the four alarm types */
+.knob-scale {
   width: calc(var(--knob) + 1.75rem);
   aspect-ratio: 1;
   background:
@@ -309,7 +298,7 @@ button:active { transform: scale(var(--press-scale)); }
   touch-action: none;
   cursor: grab;
 }
-.knob::before {   /* the ridged rim you grip */
+.knob::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -351,7 +340,7 @@ button:active { transform: scale(var(--press-scale)); }
 .deck:not([data-changed]) .knob-cap { cursor: default; }
 .deck:not([data-changed]) .knob-cap:active { transform: none; }
 
-.knob-label {   /* placed round the knob at its angle (--a) */
+.knob-label {
   position: absolute;
   left: calc(50% + sin(var(--a)) * var(--knob-label-r));
   top: calc(50% - cos(var(--a)) * var(--knob-label-r));
@@ -363,7 +352,7 @@ button:active { transform: scale(var(--press-scale)); }
   font-weight: var(--weight-strong);
 }
 .knob-label[aria-current="true"] { color: var(--ink); }
-.knob-label[data-set]::after {   /* a small mark under the type that's set */
+.knob-label[data-set]::after {
   content: '';
   display: block;
   width: 1rem;
@@ -373,7 +362,6 @@ button:active { transform: scale(var(--press-scale)); }
   background: var(--accent);
 }
 
-/* Custom alarm: a small chip. "Set custom alarm" until one is set, then its date and time */
 .custom { grid-area: custom; display: flex; justify-content: center; gap: var(--space-2); }
 .custom-pick {
   position: relative;
@@ -401,12 +389,10 @@ button:active { transform: scale(var(--press-scale)); }
 .custom-clear { width: var(--chip-h); height: var(--chip-h); border-radius: var(--radius-xs); }
 .custom-clear .icon { width: 1rem; height: 1rem; }
 
-/* Try and Stop: chunky keys */
 .keys { grid-area: keys; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .key { height: var(--control-h); }
-/* While Try plays: a bar on it that drains over the preview's length (--try-ms, set by main.js) */
 #try { position: relative; overflow: hidden; }
-#try.sending .icon { animation: throb 0.8s var(--ease-out) infinite; }   /* waiting to hear it arrived */
+#try.sending .icon { animation: throb 0.8s var(--ease-out) infinite; }
 .try-bar {
   position: absolute;
   left: 0;
@@ -423,7 +409,6 @@ button:active { transform: scale(var(--press-scale)); }
 @keyframes drain { from { scale: 1 1; } to { scale: 0 1; } }
 .app[data-playing] .stop { background: var(--accent); color: var(--navy-900); box-shadow: var(--glow); }
 
-/* Short-lived message, only when something failed */
 .status {
   position: fixed;
   left: 50%;
@@ -442,8 +427,6 @@ button:active { transform: scale(var(--press-scale)); }
 }
 .status[data-show] { opacity: 1; translate: 0; }
 
-/* Short, narrow screens (a phone browser with its toolbars showing): a shorter trace, the
-   custom alarm chip beside the keys, and the knob's names pulled in, so the knob keeps room */
 @media (max-height: 640px) and (max-width: 55.99rem) {
   .device {
     grid-template-columns: auto minmax(0, 1fr);
@@ -456,7 +439,6 @@ button:active { transform: scale(var(--press-scale)); }
   .custom { align-items: center; }
 }
 
-/* Wide screens: the screen on the left, the knob and keys on the right */
 @media (min-width: 56rem) and (min-height: 36rem) {
   .app {
     max-width: 80rem;
@@ -484,9 +466,7 @@ button:active { transform: scale(var(--press-scale)); }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 
-/* ---------- Settings ---------- */
-.top { position: relative; }
-.faders {   /* the Settings button: three mixing-desk faders, no box */
+.faders {
   position: absolute;
   right: 0;
   top: 50%;
@@ -503,7 +483,6 @@ button:active { transform: scale(var(--press-scale)); }
 .faders .knobs { fill: var(--navy-900); stroke: currentColor; }
 @media (hover: hover) { .faders:hover { color: var(--ink); } }
 
-/* A small window over the app, in the device's own body: the link, then one row per setting */
 .settings {
   width: min(92vw, 24rem);
   max-height: 92dvh;
@@ -526,7 +505,7 @@ button:active { transform: scale(var(--press-scale)); }
   font-weight: var(--weight-display);
   letter-spacing: var(--tracking-display);
 }
-.settings-head h2:focus { outline: none; box-shadow: none !important; }   /* focused on open, so the keyboard stays shut */
+.settings-head h2:focus { outline: none; box-shadow: none !important; }
 .settings-close { display: flex; width: var(--chip-h); height: var(--chip-h); border-radius: var(--radius-xs); }
 
 .link, .tiles {
@@ -545,12 +524,11 @@ button:active { transform: scale(var(--press-scale)); }
   box-shadow: inset 0 0 0 1px var(--navy-600);
   color: var(--ink);
   font: inherit;
-  font-size: var(--text-base);   /* 16 px, so iOS doesn't zoom in */
+  font-size: var(--text-base);
 }
 .link input::placeholder { color: var(--ink-faint); }
 .link input:focus-visible { box-shadow: inset 0 0 0 1px var(--accent-mid) !important; }
 
-/* One row per setting, hairlines between: the name and a hint, then  - value +  */
 .tiles { display: grid; overflow: hidden; }
 .tile { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); }
 .tile + .tile { box-shadow: inset 0 1px 0 var(--navy-700); }
@@ -597,7 +575,6 @@ button:active { transform: scale(var(--press-scale)); }
 .logout { justify-self: center; padding: var(--space-1) var(--space-2); background: none; color: var(--ink-faint); font-size: var(--text-sm); font-weight: var(--weight-strong); }
 @media (hover: hover) { .logout:hover { color: var(--status-offline); } }
 
-/* The narrowest phones: slimmer steppers so each name and hint keeps to its line */
 @media (max-width: 24rem) {
   .settings { padding: var(--space-3); }
   .tile { padding-left: var(--space-3); gap: var(--space-2); }

@@ -1,71 +1,57 @@
-/* Design tokens: the only place colors, type, sizes, radii, depth and motion are defined.
-   Every value comes from the logo (web/public/logo.png) and app icon (web/public/icon-512.png). */
 :root {
   color-scheme: dark;
 
-  /* Color: navy sampled from the icon, the accent from its waveform, neutrals tinted navy */
-  --navy-950: #06111F;   /* deepest well (inputs, the slider track) */
-  --navy-900: #0A192C;   /* base surface: the icon's edges */
-  --navy-800: #16273F;   /* raised surface: the icon's top */
-  --navy-700: #1F3352;   /* controls */
-  --navy-600: #2A4166;   /* hairlines, idle strokes */
-  --ink: #FFFFFF;        /* the wordmark's letters */
+  --navy-950: #06111F;
+  --navy-900: #0A192C;
+  --navy-800: #16273F;
+  --navy-700: #1F3352;
+  --navy-600: #2A4166;
+  --ink: #FFFFFF;
   --ink-dim: #A9B6CC;
   --ink-faint: #6A7B98;
-  --accent-start: #F6400C;   /* left end of the waveform */
+  --accent-start: #F6400C;
   --accent-mid: #FF7421;
-  --accent-end: #FEBC2B;     /* right end of the waveform */
-  /* The only colors not from the logo: whether the Pico is online (green) or offline (red) */
+  --accent-end: #FEBC2B;
   --status-online: #3DDC84;
   --status-offline: #FF4D5E;
 
   --accent: linear-gradient(90deg, var(--accent-start), var(--accent-mid) 55%, var(--accent-end));
-  --surface: linear-gradient(165deg, var(--navy-800), var(--navy-900) 70%);   /* the icon's own fade */
+  --surface: linear-gradient(165deg, var(--navy-800), var(--navy-900) 70%);
   --surface-raised: linear-gradient(165deg, var(--navy-700), var(--navy-800));
-  --sheen: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0));   /* top light on raised parts */
+  --sheen: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0));
   --halo: radial-gradient(90% 55% at 15% 0%, color-mix(in srgb, var(--navy-700) 60%, transparent), transparent 70%);
-  /* Dawn: the screen's inner glow, brighter as the alarm gets closer.
-     main.js sets --dawn from 0 (8 h or more away) to 1 (now). */
   --dawn-min: 4%;
   --dawn-max: 30%;
-  /* The device body that holds the screen and the knob */
   --device: linear-gradient(165deg, var(--navy-700), var(--navy-800) 60%, var(--navy-900));
   --device-edge: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 0 0 1px color-mix(in srgb, var(--navy-600) 60%, transparent);
-  /* The knob: a raised dial with a ridged rim, ticks all the way round */
   --knob-body: radial-gradient(circle at 35% 28%, var(--navy-600), var(--navy-800) 55%, var(--navy-900));
   --knob-ridges: repeating-conic-gradient(rgb(255 255 255 / 0.07) 0 2deg, transparent 2deg 6deg);
   --knob-tick: var(--navy-600);
   --knob-tick-major: var(--ink-faint);
 
-  /* Depth: shadows are navy, never grey; glows are the accent */
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 0.375rem 1rem rgb(2 8 18 / 0.45);
   --shadow-2: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 1.25rem 3rem rgb(2 8 18 / 0.6);
   --shadow-inset: inset 0 0.125rem 0.375rem rgb(2 8 18 / 0.6);
   --glow: 0 0 1.75rem color-mix(in srgb, var(--accent-mid) 38%, transparent);
   --glow-soft: 0 0 3.5rem color-mix(in srgb, var(--accent-start) 22%, transparent);
-  --glow-drop: drop-shadow(0 0 0.6rem color-mix(in srgb, var(--accent-mid) 55%, transparent));   /* for SVG lines */
-  --glow-drop-strong: drop-shadow(0 0 1rem color-mix(in srgb, var(--accent-mid) 80%, transparent));   /* while Try plays */
+  --glow-drop: drop-shadow(0 0 0.6rem color-mix(in srgb, var(--accent-mid) 55%, transparent));
+  --glow-drop-strong: drop-shadow(0 0 1rem color-mix(in srgb, var(--accent-mid) 80%, transparent));
   --ring: 0 0 0 0.1875rem color-mix(in srgb, var(--accent-end) 70%, transparent);
 
-  /* Type: one family matching the wordmark (heavy, slanted, geometric) */
   --font: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --weight-ui: 500;
   --weight-strong: 700;
   --weight-display: 800;
   --tracking-display: -0.03em;
   --tracking-ui: 0.005em;
-  /* Modular scale, ratio 1.333 (perfect fourth), base 1rem */
   --text-sm: 0.8125rem;
   --text-base: 1rem;
   --text-md: 1.333rem;
   --text-lg: 1.777rem;
   --leading-tight: 0.95;
   --leading-ui: 1.3;
-  /* The next alarm's time scales with the screen panel (cqi = share of its width), capped by
-     the viewport height so short phones still fit */
   --screen-time: min(24cqi, 12dvh);
 
-  /* Spacing: 4 px steps */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -75,40 +61,29 @@
   --space-7: 3rem;
   --gutter: max(var(--space-4), env(safe-area-inset-left), env(safe-area-inset-right));
 
-  /* Radii: the iOS icon mask, about 22.37% of a side. Fixed radii are that ratio times the
-     element's height: 3.25 rem controls, 4.5 rem tiles. Anything nested inside a padded
-     parent uses the parent's radius minus the padding, so the corners stay parallel. */
-  --radius-icon: 22.37%;
-  --radius-xs: 0.5rem;    /* the small custom alarm chip */
+  --radius-xs: 0.5rem;
   --radius-sm: 0.75rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.5rem;    /* the screen */
+  --radius-lg: 1.5rem;
   --device-pad: var(--space-3);
 
-  /* Sizes */
   --control-h: 3.25rem;
-  --thumb: calc(var(--slide-h) - 2 * var(--space-1));   /* the slide-to-unlock handle */
+  --thumb: calc(var(--slide-h) - 2 * var(--space-1));
   --chip-h: 2.25rem;
-  --trace-short-h: 2.5rem;   /* the screen trace on short phone browsers */
+  --trace-short-h: 2.5rem;
   --sync-size: 2.5rem;
-  /* The knob's diameter (cq = share of its area): as big as fits with the type names on the
-     diagonals around it */
-  --knob-label-gap: 3.25rem;   /* how far the type names sit outside the knob's edge */
+  --knob-label-gap: 3.25rem;
   --knob: max(5rem, min(141cqw - 14.5rem, 141cqh - 9rem, 100cqw - 2rem, 100cqh - 2rem));
   --knob-label-r: calc(var(--knob) / 2 + var(--knob-label-gap));
-  --slide-h: 3.75rem;          /* the password + slide-to-unlock track */
+  --slide-h: 3.75rem;
   --logo-lock-w: min(82vw, 24rem);
   --logo-header-w: min(66vw, 17rem);
   --field-w: min(86vw, 22rem);
   --icon: 1.25rem;
 
-  /* Waveform: the logo's stroke is 36 of 512 icon px, with round caps and joins */
-  --wave-stroke-logo: 36;          /* in the motif's own units (viewBox from the icon) */
+  --wave-stroke-logo: 36;
   --wave-stroke-live: 0.55rem;
-  --wave-stroke-preview: 0.7rem;   /* the trace while Try plays */
-  --wave-stroke-mini: 0.22rem;
+  --wave-stroke-preview: 0.7rem;
 
-  /* Motion */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 120ms;
