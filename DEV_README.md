@@ -87,6 +87,7 @@ lists and settings and hands them over on every reconnect.
   - the custom alarm chip
   - Try and Stop
   - the Settings dialog
+  - the custom alarm popup (month calendar, then hour and minute boxes with AM/PM)
 - `src/main.js`: all page behavior:
   - slide to unlock
   - drawing the screen (`render()`)
@@ -99,6 +100,10 @@ lists and settings and hands them over on every reconnect.
   `TYPES` mirrors `PATTERNS` in `shaker.py`. Keep the names and steps in sync.
 - `src/api.js`: the only code that calls `/api`. It remembers the password in localStorage and
   turns failures into short messages ("wrong password", "no connection").
+- `src/calendar.js`: the custom alarm popup. Pick a day on the month grid, then the time: type
+  it, use the small arrows (hold to repeat; minutes move in steps of 5), swipe a box up or down,
+  or scroll over it. Set hands the time back to `main.js`, which sends it.
+- `src/calendar.css`: the popup's styles, built only from the tokens.
 - `src/wave.js`: draws the animated zigzag trace for an alarm type's strength over time.
 - `src/tokens.css`: the design tokens (colors, type, spacing, radii, shadows, motion), all from
   the logo.

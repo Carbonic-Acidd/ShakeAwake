@@ -1,5 +1,6 @@
 import * as api from './api.js'
 import { liveWave } from './wave.js'
+import { openPicker } from './calendar.js'
 
 const TYPES = {
   classic: [[1, 1, 300], [0, 0, 300], [1, 1, 300], [0, 0, 300], [1, 1, 1500], [0, 0, 1000]],
@@ -77,20 +78,11 @@ function swap(update) {
   else update()
 }
 
-const pad = (n) => String(n).padStart(2, '0')
-function toInputValue(seconds) {
-  const d = new Date(seconds * 1000)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-function resetPicker() {
+function defaultTime() {
   const d = new Date()
   d.setHours(DEFAULT_HOUR, 0, 0, 0)
   if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1)
-  $('custom-input').value = toInputValue(d.getTime() / 1000)
-}
-const pickedTime = () => {
-  const value = $('custom-input').value
-  return value ? Math.floor(new Date(value).getTime() / 1000) : 0
+  return d.getTime() / 1000
 }
 
 function dayWords(date) {
@@ -111,7 +103,6 @@ function timeLeft(seconds) {
 function setManual(time) {
   manualTime = time
   try { localStorage.setItem(MANUAL_KEY, time) } catch {}
-  if (!time) resetPicker()
 }
 
 function nextAlarm() {
@@ -228,13 +219,12 @@ async function stop() {
   if (reply && !reply.delivered) refuse($('stop'))
 }
 
-async function setCustom() {
-  const time = pickedTime()
-  if (time <= now()) return shake($('custom-pick'))
-  if (await run(() => api.setAlarm(time))) {
-    setManual(time)
-    render()
-  }
+async function setCustom(time) {
+  if (time <= now()) return shake($('picker-set'), 'nudge')
+  if (!await run(() => api.setAlarm(time))) return false
+  setManual(time)
+  render()
+  return true
 }
 
 async function clearCustom() {
@@ -451,6 +441,7 @@ function showLock() {
     $('app').hidden = true
     $('lock').hidden = false
     if ($('settings').open) $('settings').close()
+    if ($('picker').open) $('picker').close()
   })
 }
 
@@ -478,10 +469,7 @@ $('tiles').innerHTML = Object.entries(STEPPERS).map(([key, { name, hint }]) => `
     </div>
   </div>`).join('')
 
-if (manualTime > now()) $('custom-input').value = toInputValue(manualTime)
-else resetPicker()
-$('custom-input').onchange = setCustom
-$('custom-input').onclick = () => { try { $('custom-input').showPicker() } catch {} }
+$('custom-pick').onclick = () => openPicker(manualTime > now() ? manualTime : defaultTime(), setCustom)
 $('custom-clear').onclick = clearCustom
 $('open-settings').onclick = () => showSettings(true)
 $('settings-close').onclick = () => showSettings(false)
