@@ -1,6 +1,6 @@
 # Shake Awake
 
-A silent alarm that wakes you by shaking your bed instead of making noise.
+A silent alarm that wakes you by silently shaking your bed.
 
 ## Why
 Sound alarms wake everyone in the room, and some people sleep right through them. Shake Awake
