@@ -17,12 +17,26 @@ Run every `make` command from the repo root.
 
 ## First-time setup
 ```
-cp .env.example .env     # then fill it in; each key has a comment saying where it comes from
+cp .env.example .env     # then fill it in (see the table below)
 make setup               # Python tools + web packages
 make pico-setup          # once per Pico, with the Pico plugged in
 npx vercel login         # once: lets this laptop run `make secrets`, `make dev`, `make deploy`
 npx vercel link          # once: ties this folder to the Vercel project
 ```
+
+### The `.env` keys
+| Key | Where it comes from |
+|---|---|
+| `WIFI_SSID`, `WIFI_PASSWORD` | the Wi-Fi the Pico joins |
+| `PICO_MQTT_USER`, `PICO_MQTT_PASS`, `MQTT_HOST` | EMQX, see below |
+| `DEVICE_ID` | any short name; it names the topics `shakeawake/<DEVICE_ID>/...` (Pico and server) |
+| `EMQX_API_URL`, `EMQX_API_KEY`, `EMQX_API_SECRET` | EMQX, see below |
+| `APP_PASSWORD` | the website's shared password, see below |
+| `ICS_URL` | optional fallback calendar link (the Settings panel saves its own). Google Calendar: Settings > your calendar > "Secret address in iCal format"; `webcal://` links work too |
+| `ALARM_OFFSET_MIN` | optional fallback: minutes before the day's first event to wake (60) |
+
+The Pico keys go to `pico/env.py` (`make run`); the server keys go to Vercel (`make secrets`).
+Upstash's `KV_REST_API_URL` and `KV_REST_API_TOKEN` are added by Vercel itself, not from `.env`.
 
 ### Vercel
 1. vercel.com > **Add New > Project** > import this GitHub repo. Root Directory `./`,
@@ -35,11 +49,11 @@ npx vercel link          # once: ties this folder to the Vercel project
 
 ### EMQX
 1. In the EMQX Cloud console, open the deployment's **Overview**.
-2. Copy the **REST API** address into `EMQX_API_URL` (ends in `/api/v5`).
+2. Copy the **REST API** address into `EMQX_API_URL`, e.g. `https://your-id.ala.us-east-1.emqxsl.com:8443/api/v5`.
 3. Under **API Key**, select **+ New API Key**; put the App ID in `EMQX_API_KEY` and the
    App Secret in `EMQX_API_SECRET` (the secret is only shown once).
 4. Under **Access Control > Authentication**, add a username and password for the Pico
-   (`PICO_MQTT_USER`, `PICO_MQTT_PASS`); `MQTT_HOST` is the deployment's address.
+   (`PICO_MQTT_USER`, `PICO_MQTT_PASS`); `MQTT_HOST` is the deployment's address (TLS, port 8883).
 
 ### The website's password
 The page is public, but it holds no secrets and can do nothing on its own. Every `/api`
@@ -78,11 +92,35 @@ Jobs > Run** runs it now, and so does `POST /api/sync` (the page's Sync button, 
 - `make secrets`: upload the server's values from `.env` to Vercel.
 - `make help`: list all commands.
 
+## Why it's built this way
+- Wi-Fi power saving is off (`WIFI_POWER_SAVE_OFF`): with it on, joining the laptop hotspot failed.
+- A Wi-Fi rejoin switches the radio off and on first: after the network vanishes, a plain
+  `connect()` can stay stuck "joining" forever.
+- Connecting to the broker blocks for a few seconds (TLS), so the Pico skips it while the shaker
+  plays. Pings still go out every 15 s, inside the 20 s keepalive.
+- The Pico passes an `SSLContext` to umqtt: that makes it send the host name (SNI), which EMQX
+  Serverless requires. The broker's certificate isn't checked yet.
+- `gc.collect()` runs before each TLS connect: TLS needs one big block of memory.
+- PWM keeps running after a script stops, so `main.py` switches it off in a `finally` block.
+- Felt strength follows sin(pi × duty), peaking at 50% duty, so `shaker.py` turns strength into
+  duty with asin. `MAX_STRENGTH` caps it below where the amp's protection trips.
+- `state.json` is written to a temp file and renamed over the old one; on littlefs the rename is
+  atomic, so a power cut never leaves half a file.
+- An alarm is saved as fired before it plays, so a reboot mid-alarm doesn't play it again.
+- A cleared custom alarm is sent as `[]`, never as an empty message: an empty retained message
+  deletes it from the broker, and a Pico that was offline would never hear it was cleared.
+- The password check uses `hmac.compare_digest`, which takes the same time however much matches.
+- `make run` uses `mpremote ... run --no-follow ... + repl`: plain `mpremote run` doesn't pass
+  Ctrl-C to the Pico, which would leave the shaker running.
+- The cron runs at 08:00 UTC (3 am New York in winter, 4 am in summer): Vercel Hobby allows one
+  run a day, and changing the time needs a deploy.
+
 ## Files
 - `Makefile`: every command above.
 - `.env.example`: the config keys; copy it to `.env` (never committed) for real values.
 - `requirements.txt`: laptop Python tools (mpremote, python-dotenv).
-- `PLAN.md`: the roadmap and the MQTT topics contract.
+- `PLAN.md`: the MQTT topics contract, the API and how the system behaves.
+- `REFACTOR_PLAN.md`: the simplification refactor, step by step.
 - `vercel.json`: Vercel's config: builds `web/` into `web/dist`, sends `/api/*` to `api/index.py`, and the daily cron.
 - `scripts/gen_pico_env.py`: turns `.env` into `pico/env.py`, because the Pico can't read `.env`.
 - `scripts/upload_secrets.py`: uploads the server's keys from `.env` to Vercel (plus `CRON_SECRET`, the same as `APP_PASSWORD`).
@@ -93,11 +131,11 @@ Jobs > Run** runs it now, and so does `POST /api/sync` (the page's Sync button, 
 - `pico/main.py`: runs on boot and wires the shaker, alarms and network together.
 - `pico/shaker.py`: drives the shaker; the alarm types (classic, waves, rise, knock) are defined at the top (keep `TYPES` in `web/src/main.js` in sync, names and steps).
 - `pico/net.py`: Wi-Fi, clock (NTP) and MQTT; never blocks waiting for Wi-Fi.
-- `pico/alarms.py`: the calendar and manual alarm lists and the chosen alarm type, saved in flash; decides when one is due.
+- `pico/alarms.py`: the calendar and manual alarm lists, the last fired time and the settings, saved in `state.json`; decides when one is due.
 - `pico/env.py`: generated from `.env`, never edited or committed.
 - `web/package.json`: web dependencies (Vite).
 - `web/index.html`: the page: a lock screen, then one screen of controls.
-- `web/src/main.js`: the page's behavior: password + slide to unlock, the next alarm, the alarm type knob (turn to choose, press to set), Try, the custom alarm, Sync, Stop, and the Settings panel.
+- `web/src/main.js`: the page's behavior: password + slide to unlock, the next alarm, the alarm type knob (turn to choose, press to set), Try, the custom alarm, Sync, Stop, and the Settings panel (its tiles are built from `STEPPERS`).
 - `web/src/api.js`: the only code that calls the server's `/api`; remembers the password on this device.
 - `web/src/wave.js`: draws the live trace on the screen for the alarm type the knob points at.
 - `web/src/tokens.css`: the design tokens (colors, type, spacing, radii, depth, motion), all from the logo.

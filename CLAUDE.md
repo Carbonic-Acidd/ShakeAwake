@@ -10,13 +10,15 @@ api/index.py checks it. Vercel's cron sends CRON_SECRET, set to the same value, 
 A daily Vercel cron (08:00 UTC, vercel.json; Hobby allows only once a day) turns the calendar
 link (saved in Upstash Redis, else ICS_URL) into calendar alarms.
 Team final project for Northeastern's Cornerstone of Engineering.
-Roadmap and MQTT topics contract: PLAN.md. See README.md for every file's job.
+MQTT topics contract, API and behavior: PLAN.md. See README.md for every file's job.
 
 ## Style
 - Least code that fully works. Flat, readable, one job per file, no classes or frameworks.
+- No comments in code: names carry the meaning. A "why" the code can't show goes in README's
+  "Why it's built this way".
 - Tunable values as named constants at the top of each file.
 - Ask before adding any file, dependency, or feature.
-- Build one PLAN.md step at a time; stop after each so the human tests on hardware.
+- Build one step at a time; stop after each so the human tests on hardware.
 - Never guess wiring. Ask.
 
 ## Commands
