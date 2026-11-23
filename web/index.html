@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#0A192C">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon-192.png">
-  <!-- iPhone: home screen icon, name, and full-screen launch -->
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-title" content="Shake Awake">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +18,6 @@
   <title>Shake Awake</title>
 </head>
 <body>
-  <!-- Shared art: the accent gradient and the logo's waveform, traced from icon-512.png -->
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <defs>
       <linearGradient id="accent">
@@ -34,8 +32,6 @@
     </defs>
   </svg>
 
-  <!-- Locked: only the logo and one control: type the password into the track, then slide the
-       handle across it. This device remembers it after that. -->
   <form id="lock" class="lock">
     <img class="lock-logo" src="/logo.png" alt="Shake Awake" width="900" height="133">
     <div id="slide" class="slide">
@@ -55,10 +51,7 @@
       </button>
     </header>
 
-    <!-- One device: the screen, the knob, the custom alarm and the keys share a single body -->
     <div class="device">
-      <!-- The screen: the next alarm, how long until it, the live trace of the type on the knob,
-           and the alarm type that's set -->
       <section id="screen" class="screen rise" style="--i: 0" aria-label="Next alarm">
         <div class="screen-head">
           <p id="next-label" class="screen-label"></p>
@@ -85,7 +78,6 @@
         </div>
       </section>
 
-      <!-- The knob: turn it to choose an alarm type, press its cap to set it -->
       <div id="deck" class="deck rise" style="--i: 1">
         <div id="knob-labels" class="knob-labels"></div>
         <div class="knob-scale" aria-hidden="true"></div>
@@ -123,7 +115,6 @@
 
     <p id="status" class="status" role="status"></p>
 
-    <!-- Settings: a small window over the app. Saved on this device and on the server (shared by every device). -->
     <dialog id="settings" class="settings" aria-labelledby="settings-title">
       <form id="settings-form" class="settings-form">
         <div class="settings-head">
@@ -136,44 +127,7 @@
           <span class="tile-name">Calendar link</span>
           <input id="set-ics" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="webcal:// or https://">
         </label>
-        <div class="tiles">
-          <div id="tile-leadMin" class="tile" data-setting="leadMin">
-            <p class="tile-text"><span class="tile-name">Wake me</span><span class="tile-hint">before the first event</span></p>
-            <div class="stepper">
-              <button type="button" class="tile-key" data-step="-1" aria-label="Wake me: less">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
-              </button>
-              <output id="val-leadMin" class="tile-value"></output>
-              <button type="button" class="tile-key" data-step="1" aria-label="Wake me: more">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
-              </button>
-            </div>
-          </div>
-          <div id="tile-maxRunS" class="tile" data-setting="maxRunS">
-            <p class="tile-text"><span class="tile-name">Alarm stops after</span><span class="tile-hint">if you don't press Stop</span></p>
-            <div class="stepper">
-              <button type="button" class="tile-key" data-step="-1" aria-label="Alarm stops after: less">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
-              </button>
-              <output id="val-maxRunS" class="tile-value"></output>
-              <button type="button" class="tile-key" data-step="1" aria-label="Alarm stops after: more">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
-              </button>
-            </div>
-          </div>
-          <div id="tile-trySeconds" class="tile" data-setting="trySeconds">
-            <p class="tile-text"><span class="tile-name">Try plays for</span><span class="tile-hint">each time</span></p>
-            <div class="stepper">
-              <button type="button" class="tile-key" data-step="-1" aria-label="Try plays for: less">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
-              </button>
-              <output id="val-trySeconds" class="tile-value"></output>
-              <button type="button" class="tile-key" data-step="1" aria-label="Try plays for: more">
-                <svg class="icon" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
+        <div id="tiles" class="tiles"></div>
         <p id="settings-error" class="settings-error" role="alert"></p>
         <button id="settings-save" class="settings-save">Save</button>
         <button type="button" id="logout" class="logout">Log out of this device</button>

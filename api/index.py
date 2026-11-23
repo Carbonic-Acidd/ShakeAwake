@@ -33,16 +33,12 @@ class Alarm(BaseModel):
     pattern: str = Field(min_length=1, max_length=20)
 
 
-class AlarmType(BaseModel):
-    pattern: str = Field(min_length=1, max_length=20)
-
-
 class Settings(BaseModel):
     ics_url: str = Field(default="", max_length=2000)
     offset_min: int = Field(default=int(os.environ.get("ALARM_OFFSET_MIN") or 60), ge=0, le=720)
     max_run_s: int = Field(default=90, ge=10, le=600)
     try_s: int = Field(default=10, ge=1, le=MAX_TEST_S)
-    pattern: str | None = Field(default=None, max_length=20)
+    pattern: str = Field(default="classic", min_length=1, max_length=20)
 
 
 def redis(command, body=None):
@@ -91,11 +87,6 @@ async def check_password(request: Request, call_next):
     return await call_next(request)
 
 
-@app.get("/api/health")
-def health():
-    return {}
-
-
 @app.get("/api/status")
 def status():
     return {"online": emqx.connected(PICO_CLIENT_ID)}
@@ -123,13 +114,6 @@ def clear_alarm():
     return send("alarms/manual", alarms_message([]), retain=True)
 
 
-@app.put("/api/type")
-def set_type(body: AlarmType):
-    settings = load_settings()
-    settings.pattern = body.pattern
-    return save_settings(settings)
-
-
 @app.get("/api/settings")
 def get_settings():
     return load_settings()
@@ -140,7 +124,6 @@ def put_settings(body: Settings):
     body.ics_url = body.ics_url.strip()
     if body.ics_url and not body.ics_url.lower().startswith(LINK_STARTS):
         raise HTTPException(400, "The calendar link should start with https:// or webcal://")
-    body.pattern = load_settings().pattern or body.pattern
     return save_settings(body)
 
 
