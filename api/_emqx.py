@@ -1,6 +1,3 @@
-# Talks to EMQX Cloud's REST API ({EMQX_API_URL}/...) with the deployment's API key:
-# publishes MQTT messages, and asks whether a client (the Pico) is connected.
-# No MQTT library: one HTTPS request each. The underscore keeps Vercel from making this a function.
 import base64
 import json
 import os
@@ -8,34 +5,30 @@ from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-OK_STATUSES = (200, 202)   # 202 = "no matching subscribers", e.g. the Pico is offline. Still published.
+CONFIG_KEYS = ("EMQX_API_URL", "EMQX_API_KEY", "EMQX_API_SECRET")
+OK_STATUSES = (200, 202)
 TIMEOUT_S = 10
 
 
 def _request(method, path, body=None):
-    """Returns (status, text). Raises RuntimeError if EMQX can't be reached at all."""
-    config = {key: os.environ.get(key) for key in ("EMQX_API_URL", "EMQX_API_KEY", "EMQX_API_SECRET")}
-    for key, value in config.items():
-        if not value:
+    for key in CONFIG_KEYS:
+        if not os.environ.get(key):
             raise RuntimeError(key + " is not set")
-    login = base64.b64encode(f"{config['EMQX_API_KEY']}:{config['EMQX_API_SECRET']}".encode()).decode()
-    headers = {"Authorization": "Basic " + login}
-    if body is not None:
-        headers["Content-Type"] = "application/json"
-    request = Request(config["EMQX_API_URL"].rstrip("/") + path, method=method, headers=headers,
-                      data=json.dumps(body).encode() if body is not None else None)
+    url, key, secret = (os.environ[name] for name in CONFIG_KEYS)
+    login = base64.b64encode(f"{key}:{secret}".encode()).decode()
+    request = Request(url.rstrip("/") + path, method=method,
+                      headers={"Authorization": "Basic " + login, "Content-Type": "application/json"},
+                      data=None if body is None else json.dumps(body).encode())
     try:
         with urlopen(request, timeout=TIMEOUT_S) as response:
             return response.status, response.read().decode()
-    except HTTPError as e:   # EMQX answered, with an error status
+    except HTTPError as e:
         return e.code, e.read().decode(errors="replace")
-    except Exception as e:   # network failure: no response at all
+    except Exception as e:
         raise RuntimeError(f"Couldn't reach EMQX: {e}")
 
 
 def publish(topic, payload, retain=False, qos=0):
-    """Publishes payload (a dict, sent as JSON) to topic. Returns True if a subscriber (the Pico)
-    got it, False if nobody is subscribed right now. Raises RuntimeError if EMQX refuses."""
     status, text = _request("POST", "/publish", {
         "topic": topic, "payload": json.dumps(payload, separators=(",", ":")), "qos": qos, "retain": retain})
     if status not in OK_STATUSES:
@@ -44,14 +37,12 @@ def publish(topic, payload, retain=False, qos=0):
 
 
 def connected(client_id):
-    """True if the MQTT client with this id is connected right now (EMQX's Clients API).
-    Raises RuntimeError if EMQX can't be asked."""
     status, text = _request("GET", "/clients/" + quote(client_id, safe=""))
-    if status == 404:   # EMQX has never seen it, or has forgotten it: not connected
+    if status == 404:
         return False
     if status != 200:
         raise RuntimeError(f"EMQX said {status}: {text}")
-    data = json.loads(text)
-    if isinstance(data.get("data"), list):   # the docs show both a bare object and {"data": [...]}
-        data = data["data"][0] if data["data"] else {}
-    return bool(data.get("connected"))
+    client = json.loads(text)
+    if isinstance(client.get("data"), list):
+        client = (client["data"] or [{}])[0]
+    return bool(client.get("connected"))
