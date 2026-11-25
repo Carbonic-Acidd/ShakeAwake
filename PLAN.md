@@ -50,7 +50,8 @@ Settings: the website's faders button opens them. They hold the calendar link, t
 long an alarm plays and how long Try plays, plus Log out. The alarm type is set with the knob. All
 of it is kept in Upstash Redis (one `settings` key), so every device shows the same after it
 unlocks. `ICS_URL` and `ALARM_OFFSET_MIN` are fallbacks. The custom alarm is kept in Redis too
-(`manual` key), so every device shows it; an open page re-reads it whenever it comes back into view.
+(`manual` key), so every device shows it; an open page re-reads it every 30 s while on screen, and when it comes
+back into view or gets focus.
 
 Clock: the Pico has no clock battery, so it fires nothing until NTP has worked once since boot.
 It syncs on every (re)connect and every 6 hours.

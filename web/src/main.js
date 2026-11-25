@@ -484,7 +484,12 @@ $('try').onclick = tryType
 $('stop').onclick = stop
 $('sync').onclick = sync
 $('lock').onsubmit = (event) => { event.preventDefault(); login() }
-setInterval(() => { if (!$('app').hidden) render() }, TICK_MS)
+setInterval(() => {
+  if ($('app').hidden) return
+  render()
+  if (!document.hidden) refreshCustom()
+}, TICK_MS)
+window.addEventListener('focus', () => { if (!$('app').hidden) refreshCustom() })
 setInterval(() => { if (!$('app').hidden && !document.hidden) checkPico() }, PICO_CHECK_MS)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden || $('app').hidden) return

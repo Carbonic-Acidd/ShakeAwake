@@ -35,8 +35,8 @@ Vercel cron (08:00 UTC) calls `/api/cron` to turn the calendar into alarms.
 - **Press Try or Stop:** the server publishes a non-retained command on `shakeawake/<id>/cmd`. The
   reply says whether the Pico was listening (`delivered`), which updates the online dot.
 - **Open the page:** it logs in with `GET /api/settings` (which also returns the custom alarm),
-  syncs the calendar, and asks `GET /api/status` every 5 s whether the Pico is connected. When the
-  page comes back into view it re-reads the custom alarm.
+  syncs the calendar, and asks `GET /api/status` every 5 s whether the Pico is connected. It re-reads
+  the custom alarm every 30 s while on screen, and when it comes back into view or gets focus.
 
 Retained messages are the reason an offline Pico catches up: the broker keeps the last alarm
 lists and settings and hands them over on every reconnect.
