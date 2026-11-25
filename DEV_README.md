@@ -23,8 +23,9 @@ Vercel serves the website and `/api` from one project and deploys every push to 
 Vercel cron (08:00 UTC) calls `/api/cron` to turn the calendar into alarms.
 
 ### What happens when you...
-- **Set a custom alarm:** the page calls `PUT /api/alarm` with a UTC time. The server publishes
-  `[time]` as a retained message on `shakeawake/<id>/alarms/manual`. The Pico gets it (now, or
+- **Set a custom alarm:** the page calls `PUT /api/alarm` with a UTC time. The server saves it in
+  Redis (`manual`, so every device shows it) and publishes `[time]` as a retained message on
+  `shakeawake/<id>/alarms/manual`. The Pico gets it (now, or
   whenever it next connects), saves it in `state.json`, and fires it when the time comes.
 - **Set the alarm type or Settings:** the page calls `PUT /api/settings`. The server saves
   everything in Redis and publishes the Pico's part, `{"pattern", "max_run_s"}`, as retained.
@@ -33,8 +34,9 @@ Vercel cron (08:00 UTC) calls `/api/cron` to turn the calendar into alarms.
   there are none), and publishes the list as retained.
 - **Press Try or Stop:** the server publishes a non-retained command on `shakeawake/<id>/cmd`. The
   reply says whether the Pico was listening (`delivered`), which updates the online dot.
-- **Open the page:** it logs in with `GET /api/settings`, syncs the calendar, and asks
-  `GET /api/status` every 5 s whether the Pico is connected.
+- **Open the page:** it logs in with `GET /api/settings` (which also returns the custom alarm),
+  syncs the calendar, and asks `GET /api/status` every 5 s whether the Pico is connected. When the
+  page comes back into view it re-reads the custom alarm.
 
 Retained messages are the reason an offline Pico catches up: the broker keeps the last alarm
 lists and settings and hands them over on every reconnect.

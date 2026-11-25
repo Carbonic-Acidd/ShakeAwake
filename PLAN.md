@@ -21,11 +21,11 @@ Every request needs `Authorization: Bearer <APP_PASSWORD>`; anything else gets a
 
 | Route | Does |
 |---|---|
-| `GET /api/settings` | the saved settings (`ics_url`, `offset_min`, `max_run_s`, `try_s`, `pattern`); the page also uses it to log in |
+| `GET /api/settings` | the saved settings (`ics_url`, `offset_min`, `max_run_s`, `try_s`, `pattern`) plus `manual`, the custom alarm (0 if none); the page also uses it to log in |
 | `PUT /api/settings` | saves them in Upstash Redis and sends the Pico its part |
 | `GET /api/status` | `{"online": bool}`: whether EMQX has client `shakeawake-<id>` connected |
 | `POST /api/test`, `POST /api/stop` | play a type for a few seconds, or stop |
-| `PUT /api/alarm`, `DELETE /api/alarm` | set or clear the one custom alarm |
+| `PUT /api/alarm`, `DELETE /api/alarm` | set or clear the one custom alarm (kept in Redis key `manual`) |
 | `POST /api/sync`, `GET /api/cron` | read the calendar and send its alarms (the cron runs daily at 08:00 UTC) |
 
 Commands reply `{"delivered": bool}`: whether the Pico was listening.
@@ -49,8 +49,8 @@ plays until Stop, or for the settings' `max_run_s`.
 Settings: the website's faders button opens them. They hold the calendar link, the lead time, how
 long an alarm plays and how long Try plays, plus Log out. The alarm type is set with the knob. All
 of it is kept in Upstash Redis (one `settings` key), so every device shows the same after it
-unlocks. `ICS_URL` and `ALARM_OFFSET_MIN` are fallbacks. The custom alarm is remembered only on the
-device that set it.
+unlocks. `ICS_URL` and `ALARM_OFFSET_MIN` are fallbacks. The custom alarm is kept in Redis too
+(`manual` key), so every device shows it; an open page re-reads it whenever it comes back into view.
 
 Clock: the Pico has no clock battery, so it fires nothing until NTP has worked once since boot.
 It syncs on every (re)connect and every 6 hours.

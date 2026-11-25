@@ -94,17 +94,19 @@ def stop():
 def set_alarm(body: Alarm):
     if body.time <= time.time():
         raise HTTPException(400, "Pick a time in the future")
+    redis(f"set/manual/{body.time}")
     return send("alarms/manual", [body.time], retain=True)
 
 
 @app.delete("/api/alarm")
 def clear_alarm():
+    redis("del/manual")
     return send("alarms/manual", [], retain=True)
 
 
 @app.get("/api/settings")
 def get_settings():
-    return load_settings()
+    return {**load_settings().model_dump(), "manual": int(redis("get/manual") or 0)}
 
 
 @app.put("/api/settings")

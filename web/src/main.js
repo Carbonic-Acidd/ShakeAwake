@@ -19,7 +19,6 @@ const STEPPERS = {
   max_run_s: { name: 'Alarm stops after', hint: "if you don't press Stop", choices: [30, 60, 90, 120, 180, 300], text: secondsText },
   try_s: { name: 'Try plays for', hint: 'each time', choices: [5, 10, 15, 20], text: secondsText },
 }
-const MANUAL_KEY = 'shakeawake-manual'
 const DEFAULT_HOUR = 7
 const HEIGHTS = { preview: 1, browsing: 0.95, armed: 0.85, idle: 0.6 }
 const DAWN_S = 8 * 3600
@@ -40,7 +39,6 @@ let settings = null
 let browse = 0
 let knobAngle = ANGLES[0]
 let manualTime = 0
-try { manualTime = Number(localStorage.getItem(MANUAL_KEY)) || 0 } catch {}
 let calendarNext = 0
 let preview = null
 let previewTimer = 0
@@ -100,18 +98,13 @@ function timeLeft(seconds) {
   return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes % 60}m` : `${minutes}m`
 }
 
-function setManual(time) {
-  manualTime = time
-  try { localStorage.setItem(MANUAL_KEY, time) } catch {}
-}
-
 function nextAlarm() {
   const times = [manualTime, calendarNext].filter((time) => time > now())
   return times.length ? Math.min(...times) : null
 }
 
 function render() {
-  if (manualTime && manualTime <= now()) setManual(0)
+  if (manualTime && manualTime <= now()) manualTime = 0
   const next = nextAlarm()
   const shown = NAMES[browse]
   const set = settings.pattern
@@ -222,16 +215,23 @@ async function stop() {
 async function setCustom(time) {
   if (time <= now()) return shake($('picker-set'), 'nudge')
   if (!await run(() => api.setAlarm(time))) return false
-  setManual(time)
+  manualTime = time
   render()
   return true
 }
 
 async function clearCustom() {
   if (await run(api.clearAlarm)) {
-    setManual(0)
+    manualTime = 0
     render()
   }
+}
+
+async function refreshCustom() {
+  try {
+    manualTime = (await api.login('')).manual
+    render()
+  } catch {}
 }
 
 async function sync() {
@@ -347,7 +347,8 @@ async function login() {
   }
 }
 
-function unlock(saved) {
+function unlock({ manual, ...saved }) {
+  manualTime = manual
   useSettings(saved)
   browse = Math.max(0, NAMES.indexOf(settings.pattern))
   knobAngle = ANGLES[browse]
@@ -413,7 +414,6 @@ async function saveSettings(event) {
 
 function logOut() {
   api.logOut()
-  try { localStorage.removeItem(MANUAL_KEY) } catch {}
   location.reload()
 }
 
@@ -486,7 +486,11 @@ $('sync').onclick = sync
 $('lock').onsubmit = (event) => { event.preventDefault(); login() }
 setInterval(() => { if (!$('app').hidden) render() }, TICK_MS)
 setInterval(() => { if (!$('app').hidden && !document.hidden) checkPico() }, PICO_CHECK_MS)
-document.addEventListener('visibilitychange', () => { if (!document.hidden && !$('app').hidden) checkPico() })
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || $('app').hidden) return
+  checkPico()
+  refreshCustom()
+})
 
 if (api.hasPassword()) login()
 else $('password').focus()
